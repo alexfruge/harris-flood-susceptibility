@@ -105,7 +105,7 @@ def fetch_flood_zones_rest(bbox: tuple = BBOX_GEO) -> gpd.GeoDataFrame:
     if not all_features:
         raise RuntimeError("FEMA REST API returned no features.")
     fc = {"type": "FeatureCollection", "features": all_features}
-    gdf = gpd.read_file(json.dumps(fc).encode())
+    gdf = gpd.read_file(json.dumps(fc))
     log.info("FEMA REST: retrieved %d flood zone features.", len(gdf))
     return gdf
 
