@@ -88,11 +88,27 @@ CHIRPS_RAW_DIR  = DATA_RAW / "chirps"
 CHIRPS_MEAN     = DATA_PROCESSED / "rainfall_mean_harris.tif"
 
 # ── Flood labels — FEMA NFHL ──────────────────────────────────────────────────
+FEMA_FIPS = "48201"             # Harris County, TX
+
+# Bulk GDB zip download from FEMA MSC (may require portal auth — REST is fallback)
 FEMA_NFHL_URL = (
-    "https://hazards.fema.gov/nfhl/rest/services/public/NFHL/MapServer/28/query"
-    "?where=DFIRM_ID+LIKE+'48201%25'"
-    "&outFields=*&f=geojson"
+    f"https://msc.fema.gov/portal/downloadProduct?productID=NFHL_{FEMA_FIPS}_20240101"
 )
+
+# REST MapServer endpoint — used for paginated bbox queries (no auth needed)
+FEMA_NFHL_DIRECT = (
+    "https://hazards.fema.gov/gis/nfhl/rest/services/public/NFHL/MapServer/28/query"
+)
+
+# Bounding box as (minx, miny, maxx, maxy) in WGS84 — used by REST query
+BBOX_GEO = BBOX_WGS84   # alias so flood_labels.py can import BBOX_GEO
+
+# Raw download directory for flood label source files
+RAW_LABELS_DIR      = DATA_RAW / "fema"
+
+# Final processed labels directory (where rasterised output goes)
+LABELS_DIR          = DATA_LABELS
+
 DFO_URL             = "https://floodobservatory.colorado.edu/temp/FloodArchive.zip"
 FEMA_RAW_DIR        = DATA_RAW / "fema"
 FEMA_SHP            = DATA_RAW / "fema" / "harris_fema_flood.geojson"
