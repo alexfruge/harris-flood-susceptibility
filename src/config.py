@@ -32,8 +32,8 @@ RESOLUTION_M = 30           # target cell size in metres
 # Public S3 bucket (no auth required for 30m tiles)
 COP_DEM_S3_BASE = (
     "https://copernicus-dem-30m.s3.amazonaws.com"
-    "/Copernicus_DSM_COG_10_{lat}_{lon}_DEM"
-    "/Copernicus_DSM_COG_10_{lat}_{lon}_DEM.tif"
+    "/Copernicus_DSM_COG_10_{lat}_00_{lon}_00_DEM"
+    "/Copernicus_DSM_COG_10_{lat}_00_{lon}_00_DEM.tif"
 )
 COP_DEM_TILES = [
     {"lat": "N29", "lon": "W096"},
@@ -47,13 +47,9 @@ SLOPE_RASTER    = DATA_PROCESSED / "slope_harris.tif"
 TWI_RASTER      = DATA_PROCESSED / "twi_harris.tif"
 
 # ── Land cover — NLCD 2021 ────────────────────────────────────────────────────
-NLCD_WCS_URL = (
-    "https://www.mrlc.gov/geoserver/wcs"
-    "?SERVICE=WCS&VERSION=2.0.1&REQUEST=GetCoverage"
-    "&COVERAGEID=mrlc_download__NLCD_2021_Land_Cover_L48_20230630"
-    "&FORMAT=image/tiff"
-    "&SUBSET=Long({west},{east})"
-    "&SUBSET=Lat({south},{north})"
+# ── Land cover — NLCD 2021 via USGS National Map ──────────────────────────────
+NLCD_URL = (
+    "https://s3-us-west-2.amazonaws.com/mrlc/NLCD_2021_Land_Cover_L48_20230630.zip"
 )
 NLCD_RAW        = DATA_RAW / "nlcd_2021_harris_raw.tif"
 NLCD_PROCESSED  = DATA_PROCESSED / "nlcd_harris.tif"

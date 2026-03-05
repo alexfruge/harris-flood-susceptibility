@@ -52,9 +52,7 @@ def _run_landcover():
 
 def _run_soil():
     from src.data import soil
-    soil.build_ksat_layer()
-    from src.config import RAW_SOIL_DIR
-    return RAW_SOIL_DIR / "ssurgo_harris_ksat.geojson"
+    return soil.run()
 
 def _run_streams():
     from src.data import streams
