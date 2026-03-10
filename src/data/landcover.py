@@ -1,5 +1,5 @@
 """
-landcover.py — Download NLCD 2021 land-cover raster for Harris County
+landcover.py — Download NLCD 2024 land-cover raster for Harris County
 via the MRLC Web Coverage Service (WCS).
 """
 

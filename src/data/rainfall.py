@@ -27,36 +27,30 @@ log = logging.getLogger(__name__)
 
 def _tile_url(year: int) -> str:
     """CHIRPS v3 global annual GeoTIFF URL for a given year."""
-    return f"{CHIRPS_BASE_URL}/chirps-v3.0.{year}.tif.gz"
+    return f"{CHIRPS_BASE_URL}/chirps-v2.0.{year}.tif"
 
 
 def download_year(year: int) -> Path:
-    """Download (and gunzip) one annual CHIRPS tile."""
-    import gzip, shutil
-
+    """Download one annual CHIRPS tile (already unzipped .tif)."""
     CHIRPS_RAW_DIR.mkdir(parents=True, exist_ok=True)
     dest = CHIRPS_RAW_DIR / f"chirps_{year}.tif"
-    gz   = dest.with_suffix(".tif.gz")
 
     if dest.exists():
         return dest
 
-    url  = _tile_url(year)
+    url = _tile_url(year)
     log.info("Downloading CHIRPS %d …", year)
     resp = requests.get(url, stream=True, timeout=300)
     if resp.status_code == 404:
-        # Some years may use a slightly different naming pattern
         log.warning("CHIRPS %d not found at %s", year, url)
         return None
     resp.raise_for_status()
 
-    with open(gz, "wb") as fh:
+    with open(dest, "wb") as fh:
         for chunk in resp.iter_content(chunk_size=1 << 20):
-            fh.write(chunk)
+            if chunk:
+                fh.write(chunk)
 
-    with gzip.open(gz, "rb") as f_in, open(dest, "wb") as f_out:
-        shutil.copyfileobj(f_in, f_out)
-    gz.unlink()
     return dest
 
 

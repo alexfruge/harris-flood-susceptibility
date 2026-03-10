@@ -78,8 +78,8 @@ STREAMS_SHP         = DATA_RAW / "nhd" / "nhd_flowlines_harris.shp"
 DIST_STREAM_RASTER  = DATA_PROCESSED / "dist_stream_harris.tif"
 
 # ── Rainfall — CHIRPS v3 ──────────────────────────────────────────────────────
-CHIRPS_BASE_URL = "https://data.chc.ucsb.edu/products/CHIRPS-3.0/global_annual/tifs"
-CHIRPS_YEARS    = list(range(1981, 2024))
+CHIRPS_BASE_URL = "https://data.chc.ucsb.edu/products/CHIRPS-2.0/global_annual/tifs"
+CHIRPS_YEARS    = list(range(2023, 2024))
 CHIRPS_RAW_DIR  = DATA_RAW / "chirps"
 CHIRPS_MEAN     = DATA_PROCESSED / "rainfall_mean_harris.tif"
 
