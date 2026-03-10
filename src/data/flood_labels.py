@@ -14,10 +14,14 @@ from __future__ import annotations
 import json
 import logging
 import zipfile
+import time
 from pathlib import Path
 
 import geopandas as gpd
 import requests
+
+from requests.adapters import HTTPAdapter
+from urllib3.util.retry import Retry
 
 from src.config import (
     BBOX_GEO,
@@ -74,6 +78,11 @@ def extract_flood_layer_from_gdb(zip_path: Path, out_dir: Path = RAW_LABELS_DIR)
 
 def fetch_flood_zones_rest(bbox: tuple = BBOX_GEO) -> gpd.GeoDataFrame:
     """Query FEMA NFHL REST MapServer (layer 28) with pagination."""
+    # Session with automatic retries on connection errors
+    session = requests.Session()
+    retries = Retry(total=5, backoff_factor=2, status_forcelist=[500, 502, 503, 504])
+    session.mount("https://", HTTPAdapter(max_retries=retries))
+
     minx, miny, maxx, maxy = bbox
     params = {
         "where": "1=1",
@@ -85,22 +94,36 @@ def fetch_flood_zones_rest(bbox: tuple = BBOX_GEO) -> gpd.GeoDataFrame:
         "returnGeometry": "true",
         "outSR": "4326",
         "f": "geojson",
-        "resultRecordCount": 2000,
+        "resultRecordCount": 100,
     }
     all_features: list = []
     offset = 0
     while True:
         params["resultOffset"] = offset
         log.info("Fetching FEMA REST page at offset %d ...", offset)
-        r = requests.get(FEMA_NFHL_DIRECT, params=params, timeout=120)
+        r = session.get(FEMA_NFHL_DIRECT, params=params, timeout=120)
         r.raise_for_status()
-        features = r.json().get("features", [])
+
+        if not r.content:  # empty body — server has no more data
+            break
+
+        data = r.json()
+        features = data.get("features") or []
+        
         if not features:
             break
         all_features.extend(features)
-        if len(features) < 2000:
+
+        all_features.extend(features)
+
+        if not data.get("exceededTransferLimit", False):
+            break  # server says we have everything
+
+        if len(features) < 100:
             break
-        offset += 2000
+
+        offset += 100
+        time.sleep(0.5)  # be polite to the server
 
     if not all_features:
         raise RuntimeError("FEMA REST API returned no features.")
@@ -108,7 +131,6 @@ def fetch_flood_zones_rest(bbox: tuple = BBOX_GEO) -> gpd.GeoDataFrame:
     gdf = gpd.read_file(json.dumps(fc))
     log.info("FEMA REST: retrieved %d flood zone features.", len(gdf))
     return gdf
-
 
 def get_flood_zones(out_path: Path = FEMA_GJ_PATH) -> gpd.GeoDataFrame:
     """Get FEMA flood zones — tries bulk GDB, falls back to REST API."""

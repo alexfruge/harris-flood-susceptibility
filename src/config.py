@@ -56,13 +56,20 @@ NLCD_PROCESSED  = DATA_PROCESSED / "nlcd_harris.tif"
 
 # ── Soil — USDA SSURGO ────────────────────────────────────────────────────────
 SSURGO_WFS_URL = (
-    "https://SDMDataAccess.sc.egov.usda.gov/Spatial/SDM.wfs"
-    "?SERVICE=WFS&VERSION=1.1.0&REQUEST=GetFeature"
-    "&TYPENAME=MapunitPolyExtended"
-    "&FILTER=<Filter><PropertyIsEqualTo>"
-    "<PropertyName>areasymbol</PropertyName><Literal>TX201</Literal>"
-    "</PropertyIsEqualTo></Filter>"
+    "https://sdmdataaccess.sc.egov.usda.gov/Spatial2/service.ows"
+    "?SERVICE=WFS&VERSION=2.0.0&REQUEST=GetFeature"
+    "&TYPENAME=ms:mapunitpoly"
+    "&OUTPUTFORMAT=GeoJSON"
+    "&BBOX={south},{west},{north},{east}"
 )
+SSURGO_TAB_URL = (
+    "https://sdmdataaccess.sc.egov.usda.gov/SDMDataAccess/Tabular/SDMTabularService.asmx"
+    "/RunQuery?query=SELECT+mu.mukey,+c.ksat_r+FROM+mapunit+mu"
+    "+INNER+JOIN+component+c+ON+mu.mukey=c.mukey"
+    "+INNER+JOIN+legend+l+ON+mu.lkey=l.lkey"
+    "+WHERE+l.areasymbol='TX201'+AND+c.majcompflag='Yes'"
+)
+
 SOIL_RAW_DIR    = DATA_RAW / "soil"
 SOIL_SHP        = DATA_RAW / "soil" / "harris_soil.shp"
 SOIL_RASTER     = DATA_PROCESSED / "soil_ksat_harris.tif"
@@ -93,7 +100,7 @@ FEMA_NFHL_URL = (
 
 # REST MapServer endpoint — used for paginated bbox queries (no auth needed)
 FEMA_NFHL_DIRECT = (
-    "https://hazards.fema.gov/gis/nfhl/rest/services/public/NFHL/MapServer/28/query"
+    "https://hazards.fema.gov/arcgis/rest/services/public/NFHL/MapServer/28/query"
 )
 
 # Bounding box as (minx, miny, maxx, maxy) in WGS84 — used by REST query

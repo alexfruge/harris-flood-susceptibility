@@ -25,7 +25,7 @@ sys.path.insert(0, str(Path(__file__).parent))
 
 from src.data.download import run_all
 
-VALID_SOURCES = ["dem", "landcover", "soil", "streams", "rainfall", "flood_labels"]
+VALID_SOURCES = ["dem", "landcover", "soil", "streams", "rainfall",]
 
 
 def parse_args() -> argparse.Namespace:

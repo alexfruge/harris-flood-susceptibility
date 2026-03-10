@@ -31,7 +31,6 @@ SSURGO_TAB_URL = (
 
 
 def download_spatial() -> Path:
-    """Download SSURGO spatial polygons via WFS → GeoPackage."""
     SOIL_RAW_DIR.mkdir(parents=True, exist_ok=True)
     gpkg = SOIL_RAW_DIR / "harris_soil.gpkg"
 
@@ -39,13 +38,16 @@ def download_spatial() -> Path:
         log.info("Soil spatial file already exists: %s", gpkg)
         return gpkg
 
-    log.info("Downloading SSURGO spatial data from Soil Data Access WFS …")
-    resp = requests.get(SSURGO_WFS_URL, timeout=300)
+    from src.config import BBOX_WGS84
+    west, south, east, north = BBOX_WGS84
+    url = SSURGO_WFS_URL.format(west=west, south=south, east=east, north=north)
+
+    log.info("Downloading SSURGO spatial data …")
+    resp = requests.get(url, timeout=300)
     resp.raise_for_status()
 
-    # The WFS returns GML; geopandas can read it directly from bytes via fiona
     import tempfile, os
-    with tempfile.NamedTemporaryFile(suffix=".gml", delete=False) as tmp:
+    with tempfile.NamedTemporaryFile(suffix=".geojson", delete=False) as tmp:
         tmp.write(resp.content)
         tmp_path = tmp.name
 
@@ -60,7 +62,7 @@ def download_spatial() -> Path:
 
 
 def download_tabular() -> Path:
-    """Download ksat tabular data and join to spatial polygons."""
+    """Download ksat tabular data via SSURGO REST POST endpoint."""
     gpkg = SOIL_RAW_DIR / "harris_soil.gpkg"
     if not gpkg.exists():
         download_spatial()
@@ -70,25 +72,30 @@ def download_tabular() -> Path:
         log.info("ksat CSV already exists: %s", csv_path)
         return csv_path
 
+    import pandas as pd
+
+    query = (
+        "SELECT mu.mukey, AVG(CAST(ch.ksat_r AS FLOAT)) AS ksat_r "
+        "FROM chorizon ch "
+        "INNER JOIN component co ON ch.cokey=co.cokey "
+        "INNER JOIN mapunit mu ON co.mukey=mu.mukey "
+        "INNER JOIN legend l ON mu.lkey=l.lkey "
+        "WHERE l.areasymbol='TX201' AND co.majcompflag='Yes' "
+        "GROUP BY mu.mukey"
+    )
+
     log.info("Downloading ksat tabular data …")
-    resp = requests.get(SSURGO_TAB_URL, timeout=120)
+    resp = requests.post(
+        "https://sdmdataaccess.sc.egov.usda.gov/Tabular/post.rest",
+        json={"query": query, "format": "JSON"},
+        timeout=120,
+    )
     resp.raise_for_status()
 
-    # Response is XML; parse with pandas
-    import io
-    import pandas as pd
-    from xml.etree import ElementTree as ET
-
-    root = ET.fromstring(resp.content)
-    ns   = {"ss": "urn:schemas-microsoft-com:office:spreadsheet"}
-    rows = []
-    for row in root.iter("{urn:schemas-microsoft-com:office:spreadsheet}Row"):
-        cells = [c.text for c in row.iter("{urn:schemas-microsoft-com:office:spreadsheet}Data")]
-        rows.append(cells)
-
-    df = pd.DataFrame(rows[1:], columns=rows[0])
+    data = resp.json()
+    df = pd.DataFrame(data["Table"], columns=["mukey", "ksat_r"])
     df.to_csv(csv_path, index=False)
-    log.info("ksat CSV saved → %s", csv_path)
+    log.info("ksat CSV saved → %s (%d rows)", csv_path, len(df))
     return csv_path
 
 
