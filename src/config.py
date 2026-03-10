@@ -77,10 +77,10 @@ SOIL_RASTER     = DATA_PROCESSED / "soil_ksat_harris.tif"
 # ── Streams — USGS NHD ────────────────────────────────────────────────────────
 NHD_DOWNLOAD_URL = (
     "https://prd-tnm.s3.amazonaws.com/StagedProducts/Hydrography"
-    "/NHDPlusHR/Beta/GDB/NHDPLUS_H_1207_HU4_GDB.zip"
+    "/NHDPlusHR/Beta/GDB/NHDPLUS_H_1204_HU4_GDB.zip"
 )
 NHD_RAW_DIR         = DATA_RAW / "nhd"
-NHD_GDB             = DATA_RAW / "nhd" / "NHDPLUS_H_1207_HU4_GDB.gdb"
+NHD_GDB             = DATA_RAW / "nhd" / "NHDPLUS_H_1204_HU4_GDB.gdb"
 STREAMS_SHP         = DATA_RAW / "nhd" / "nhd_flowlines_harris.shp"
 DIST_STREAM_RASTER  = DATA_PROCESSED / "dist_stream_harris.tif"
 

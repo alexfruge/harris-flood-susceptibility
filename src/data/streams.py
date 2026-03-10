@@ -1,5 +1,5 @@
 """
-streams.py — Download NHDPlus HR flowlines for HUC4 1207 (San Jacinto/Galveston).
+streams.py — Download NHDPlus HR flowlines for HUC4 1204 (San Jacinto/Galveston).
 
 The zip (~600 MB) contains a file geodatabase.  We extract the NHDFlowline
 layer, filter to Harris County's bbox, and save as a GeoPackage.
@@ -16,8 +16,8 @@ from shapely.geometry import box
 from src.config import NHD_DOWNLOAD_URL, NHD_RAW_DIR, STREAMS_SHP, BBOX_WGS84
 
 log = logging.getLogger(__name__)
-NHD_ZIP = NHD_RAW_DIR / "NHDPLUS_H_1207_HU4_GDB.zip"
-NHD_GDB = NHD_RAW_DIR / "NHDPLUS_H_1207_HU4_GDB.gdb"
+NHD_ZIP = NHD_RAW_DIR / "NHDPLUS_H_1204_HU4_GDB.zip"
+NHD_GDB = NHD_RAW_DIR / "NHDPLUS_H_1204_HU4_GDB.gdb"
 
 
 def download_zip() -> Path:
@@ -26,7 +26,7 @@ def download_zip() -> Path:
         return NHD_ZIP
 
     NHD_RAW_DIR.mkdir(parents=True, exist_ok=True)
-    log.info("Downloading NHDPlus HR HUC4-1207 (~600 MB) …")
+    log.info("Downloading NHDPlus HR HUC4-1204 (~600 MB) …")
     resp = requests.get(NHD_DOWNLOAD_URL, stream=True, timeout=600)
     resp.raise_for_status()
 
