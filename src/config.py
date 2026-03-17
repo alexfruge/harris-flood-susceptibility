@@ -46,12 +46,8 @@ DEM_MERGED      = DATA_PROCESSED / "dem_harris.tif"
 SLOPE_RASTER    = DATA_PROCESSED / "slope_harris.tif"
 TWI_RASTER      = DATA_PROCESSED / "twi_harris.tif"
 
-# ── Land cover — NLCD 2021 ────────────────────────────────────────────────────
-# ── Land cover — NLCD 2021 via USGS National Map ──────────────────────────────
-NLCD_URL = (
-    "https://s3-us-west-2.amazonaws.com/mrlc/NLCD_2021_Land_Cover_L48_20230630.zip"
-)
-NLCD_RAW        = DATA_RAW / "nlcd_2021_harris_raw.tif"
+# ── Land cover — NLCD 2024 ────────────────────────────────────────────────────
+NLCD_RAW        = DATA_RAW / "nlcd_2024_harris_raw.tif"
 NLCD_PROCESSED  = DATA_PROCESSED / "nlcd_harris.tif"
 
 # ── Soil — USDA SSURGO ────────────────────────────────────────────────────────
