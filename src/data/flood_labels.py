@@ -17,6 +17,7 @@ import zipfile
 import time
 from pathlib import Path
 
+import pandas as pd
 import geopandas as gpd
 import requests
 
@@ -77,8 +78,6 @@ def extract_flood_layer_from_gdb(zip_path: Path, out_dir: Path = RAW_LABELS_DIR)
 
 
 def fetch_flood_zones_rest(bbox: tuple = BBOX_GEO) -> gpd.GeoDataFrame:
-    """Query FEMA NFHL REST MapServer (layer 28) with pagination."""
-    # Session with automatic retries on connection errors
     session = requests.Session()
     retries = Retry(total=5, backoff_factor=2, status_forcelist=[500, 502, 503, 504])
     session.mount("https://", HTTPAdapter(max_retries=retries))
@@ -96,7 +95,8 @@ def fetch_flood_zones_rest(bbox: tuple = BBOX_GEO) -> gpd.GeoDataFrame:
         "f": "geojson",
         "resultRecordCount": 100,
     }
-    all_features: list = []
+
+    chunks: list[gpd.GeoDataFrame] = []
     offset = 0
     while True:
         params["resultOffset"] = offset
@@ -104,31 +104,29 @@ def fetch_flood_zones_rest(bbox: tuple = BBOX_GEO) -> gpd.GeoDataFrame:
         r = session.get(FEMA_NFHL_DIRECT, params=params, timeout=120)
         r.raise_for_status()
 
-        if not r.content:  # empty body — server has no more data
-            break
-
         data = r.json()
         features = data.get("features") or []
-        
-        if not features:
-            break
-        all_features.extend(features)
 
-        all_features.extend(features)
+        if not features:
+            log.info("No features returned at offset %d — pagination complete.", offset)
+            break
+
+        # Parse each page individually — avoids one giant string at the end
+        fc_page = {"type": "FeatureCollection", "features": features}
+        chunks.append(gpd.read_file(json.dumps(fc_page)))
 
         if not data.get("exceededTransferLimit", False):
-            break  # server says we have everything
-
+            break
         if len(features) < 100:
             break
 
         offset += 100
-        time.sleep(0.5)  # be polite to the server
+        time.sleep(0.5)
 
-    if not all_features:
+    if not chunks:
         raise RuntimeError("FEMA REST API returned no features.")
-    fc = {"type": "FeatureCollection", "features": all_features}
-    gdf = gpd.read_file(json.dumps(fc))
+
+    gdf = gpd.GeoDataFrame(pd.concat(chunks, ignore_index=True), crs=chunks[0].crs)
     log.info("FEMA REST: retrieved %d flood zone features.", len(gdf))
     return gdf
 
