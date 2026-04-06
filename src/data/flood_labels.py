@@ -7,6 +7,18 @@ as GeoJSON for rasterization in processing/labels.py.
 
 Fallback: if the bulk download link is unavailable, query the FEMA NFHL
 REST MapServer for Harris County features.
+
+Zone scoring
+------------
+After download, a `flood_score` integer column (0–5) is added using
+ZONE_SUBTY to disambiguate the two flavours of zone X:
+
+    5  VE, V1–V30          Coastal high hazard (wave action)
+    4  AE, A1–A30, AO, AH  High hazard — studied, with BFE
+    3  A                   High hazard — unstudied, no BFE
+    2  X (shaded), B, AR   Moderate / 0.2 % annual-chance hazard
+    1  X (unshaded), C     Minimal hazard
+    0  everything else     Outside designated zones
 """
 
 from __future__ import annotations
@@ -39,6 +51,63 @@ FEMA_ZIP_PATH   = RAW_LABELS_DIR / f"NFHL_{FEMA_FIPS}.zip"
 FEMA_GJ_PATH    = LABELS_DIR / "fema_flood_zones_harris.geojson"
 FLOOD_LAYER     = "S_FLD_HAZ_AR"
 
+# ---------------------------------------------------------------------------
+# Zone → susceptibility score mapping
+# ---------------------------------------------------------------------------
+# Score 4 covers the A1–A30 numbered zones (pre-FIRM legacy codes).
+_A_NUMBERED = {f"A{i}" for i in range(1, 31)}
+_V_NUMBERED = {f"V{i}" for i in range(1, 31)}
+
+# ZONE_SUBTY values that identify shaded X (moderate, 0.2%-annual-chance).
+# All other X / B zones are treated as unshaded (score 1).
+_X_MODERATE_SUBTYPES = {
+    "0.2 PCT ANNUAL CHANCE FLOOD HAZARD",
+    "0.2 PCT ANNUAL CHANCE FLOOD HAZARD CONTAINED IN CHANNEL",
+    "AREA OF MINIMAL FLOOD HAZARD",   # occasionally mis-coded; keep moderate
+    "FLOODWAY",                        # floodways inside X-shaded envelope
+}
+
+
+def assign_flood_scores(gdf: gpd.GeoDataFrame) -> gpd.GeoDataFrame:
+    """
+    Add a ``flood_score`` column (int, 0-5) to *gdf* in-place and return it.
+
+    Requires FLD_ZONE; uses ZONE_SUBTY when present to split zone X into
+    shaded (score 2) vs unshaded (score 1).
+    """
+    fz = gdf["FLD_ZONE"].str.strip().str.upper().fillna("")
+
+    # ZONE_SUBTY is present in the GDB layer and in the REST outFields;
+    # fall back to empty string if the column is missing.
+    if "ZONE_SUBTY" in gdf.columns:
+        subty = gdf["ZONE_SUBTY"].str.strip().str.upper().fillna("")
+    else:
+        log.warning("ZONE_SUBTY column not found — zone X shaded/unshaded distinction unavailable; defaulting to score 1.")
+        subty = pd.Series("", index=gdf.index)
+
+    def _score(zone: str, sub: str) -> int:
+        if zone in _V_NUMBERED or zone == "VE":
+            return 5
+        if zone in _A_NUMBERED or zone in ("AE", "AO", "AH"):
+            return 4
+        if zone == "A":
+            return 3
+        if zone in ("AR", "B"):
+            return 2
+        if zone == "X":
+            return 2 if sub in _X_MODERATE_SUBTYPES else 1
+        if zone == "C":
+            return 1
+        return 0
+
+    gdf["flood_score"] = [
+        _score(z, s) for z, s in zip(fz, subty)
+    ]
+
+    score_counts = gdf["flood_score"].value_counts().sort_index()
+    log.info("flood_score distribution:\n%s", score_counts.to_string())
+
+    return gdf
 
 def download_nfhl_zip(out_dir: Path = RAW_LABELS_DIR) -> Path | None:
     """Attempt bulk GDB zip download from FEMA MSC. Returns None on failure."""
@@ -146,6 +215,8 @@ def get_flood_zones(out_path: Path = FEMA_GJ_PATH) -> gpd.GeoDataFrame:
             gdf = fetch_flood_zones_rest()
     else:
         gdf = fetch_flood_zones_rest()
+
+    gdf = assign_flood_scores(gdf)
 
     gdf.to_file(out_path, driver="GeoJSON")
     log.info("Flood zones saved -> %s (%d polygons)", out_path, len(gdf))
