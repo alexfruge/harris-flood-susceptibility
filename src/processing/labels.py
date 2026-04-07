@@ -107,8 +107,8 @@ def _load_flood_zones() -> gpd.GeoDataFrame:
 
 
 def _assign_class(fld_zone: str, zone_subty: str = "") -> int:
-    zone = fld_zone.strip().upper()
-    subty = zone_subty.strip().upper()
+    zone = str(fld_zone).strip().upper() if fld_zone == fld_zone else ""
+    subty = str(zone_subty).strip().upper() if zone_subty == zone_subty else ""
 
     if zone in HIGH_ZONES:
         return CLASS_HIGH
