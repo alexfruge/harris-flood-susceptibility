@@ -47,7 +47,7 @@ SLOPE_RASTER    = DATA_PROCESSED / "slope_harris.tif"
 TWI_RASTER      = DATA_PROCESSED / "twi_harris.tif"
 
 # ── Land cover — NLCD 2024 ────────────────────────────────────────────────────
-NLCD_RAW        = DATA_RAW / "nlcd_2024_harris_raw.tif"
+NLCD_RAW        = DATA_RAW / "nlcd_2024_harris_raw.tiff"
 NLCD_PROCESSED  = DATA_PROCESSED / "nlcd_harris.tif"
 
 # ── Soil — USDA SSURGO ────────────────────────────────────────────────────────
@@ -144,14 +144,16 @@ FEMA_MODERATE_ZONES = {"B", "X500", "0.2 PCT ANNUAL CHANCE FLOOD HAZARD"}
 # ── ML settings ───────────────────────────────────────────────────────────────
 RANDOM_STATE     = 42
 TEST_SIZE        = 0.20
-N_SPATIAL_FOLDS  = 5
-N_JOBS           = -1
+N_SPATIAL_FOLDS  = 3
+N_JOBS           = 4
 
 RF_PARAM_GRID = {
-    "n_estimators":      [200, 400],
-    "max_depth":         [None, 20, 40],
-    "min_samples_leaf":  [1, 5],
-    "class_weight":      ["balanced"],
+    "n_estimators":     [100, 200],
+    "max_depth":        [20, 30],
+    "min_samples_leaf": [5, 10],
+    "max_samples":      [0.3, 0.5],
+    "max_features":     ["sqrt"],
+    "class_weight":     ["balanced"],
 }
 
 SVM_PARAM_GRID = {

@@ -6,6 +6,9 @@ data/raw/
 data/processed/
 data/labels/
 
+# Outputs
+outputs/
+
 # Jupyter
 .ipynb_checkpoints/
 *.ipynb_checkpoints
