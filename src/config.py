@@ -22,7 +22,7 @@ CRS = "EPSG:32615"          # UTM Zone 15N — appropriate for Harris County, TX
 
 # ── Study area ────────────────────────────────────────────────────────────────
 # Harris County bounding box in WGS84 (lon_min, lat_min, lon_max, lat_max)
-BBOX_WGS84 = (-95.9100, 29.4900, -94.9000, 30.1700)
+BBOX_WGS84 = (-95.98, 29.48, -94.86, 30.18)
 WEST, SOUTH, EAST, NORTH = BBOX_WGS84
 
 # ── Raster grid ───────────────────────────────────────────────────────────────
